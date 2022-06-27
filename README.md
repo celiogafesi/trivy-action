@@ -35,11 +35,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Build an image from Dockerfile
         run: |
           docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -80,7 +80,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -115,8 +115,8 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
-        if: always() 
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -152,7 +152,7 @@ jobs:
           severity: 'CRITICAL'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -187,7 +187,7 @@ jobs:
           severity: 'CRITICAL'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -222,9 +222,41 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
+```
+
+### Using Trivy to generate SBOM
+It's possible for Trivy to generate an SBOM of your dependencies and submit them to a consumer like GitHub Dependency Snapshot.
+
+The sending of SBOM to GitHub feature is only available if you currently have [GitHub Dependency Snapshot](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/using-the-dependency-submission-api) available to you in your repo. 
+
+In order to send results to the GitHub Dependency Snapshot, you will need to create a [GitHub PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+```yaml
+---
+name: Pull Request
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  build:
+    name: Checks
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Snapshots
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'github'
+          output: 'dependency-results.sbom.json'
+          image-ref: '.'
+          github-pat: '<github_pat_token>'
 ```
 
 ### Using Trivy to scan your private registry
@@ -247,7 +279,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -256,10 +288,10 @@ jobs:
           output: 'trivy-results.sarif'
         env:
           TRIVY_USERNAME: Username
-          TRIVY_PASSWORD: Password        
+          TRIVY_PASSWORD: Password
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -283,7 +315,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -296,7 +328,7 @@ jobs:
           AWS_DEFAULT_REGION: us-west-2
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -319,7 +351,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -330,7 +362,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIAL: /path/to/credential.json
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -352,7 +384,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -361,10 +393,10 @@ jobs:
           output: 'trivy-results.sarif'
         env:
           TRIVY_USERNAME: Username
-          TRIVY_PASSWORD: Password        
+          TRIVY_PASSWORD: Password
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
 ```
@@ -375,25 +407,29 @@ jobs:
 
 Following inputs can be used as `step.with` keys:
 
-| Name             | Type    | Default                            | Description                                   |
-|------------------|---------|------------------------------------|-----------------------------------------------|
-| `scan-type`      | String  | `image`                            | Scan type, e.g. `image` or `fs`|
-| `input`          | String  |                                    | Tar reference, e.g. `alpine-latest.tar` |
-| `image-ref`      | String  |                                    | Image reference, e.g. `alpine:3.10.2`         |
-| `scan-ref`       | String  | `/github/workspace/`               | Scan reference, e.g. `/github/workspace/` or `.`|
-| `format`         | String  | `table`                            | Output format (`table`, `json`, `sarif`)   |
-| `template`       | String  |                                    | Output template (`@/contrib/gitlab.tpl`, `@/contrib/junit.tpl`)|
-| `output`         | String  |                                    | Save results to a file                        |
-| `exit-code`      | String  | `0`                                | Exit code when specified vulnerabilities are found     |
-| `ignore-unfixed` | Boolean | false                              | Ignore unpatched/unfixed vulnerabilities      |
-| `vuln-type`      | String  | `os,library`                       | Vulnerability types (os,library)              |
-| `severity`       | String  | `UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL` | Severities of vulnerabilities to scanned for and displayed |
-| `skip-dirs`      | String  |                                    | Comma separated list of directories where traversal is skipped |
-| `skip-files`     | String  |                                    | Comma separated list of files where traversal is skipped |
-| `cache-dir`      | String  |                                    | Cache directory                               |
-| `timeout`        | String  | `5m0s`                             | Scan timeout duration                         |
-| `ignore-policy`  | String  |                                    | Filter vulnerabilities with OPA rego language |
-| `list-all-pkgs`  | String  |                                    | Output all packages regardless of vulnerability |
+| Name              | Type    | Default                            | Description                                                                                     |
+|-------------------|---------|------------------------------------|-------------------------------------------------------------------------------------------------|
+| `scan-type`       | String  | `image`                            | Scan type, e.g. `image` or `fs`                                                                 |
+| `input`           | String  |                                    | Tar reference, e.g. `alpine-latest.tar`                                                         |
+| `image-ref`       | String  |                                    | Image reference, e.g. `alpine:3.10.2`                                                           |
+| `scan-ref`        | String  | `/github/workspace/`               | Scan reference, e.g. `/github/workspace/` or `.`                                                |
+| `format`          | String  | `table`                            | Output format (`table`, `json`, `sarif`, `github`)                                              |
+| `template`        | String  |                                    | Output template (`@/contrib/gitlab.tpl`, `@/contrib/junit.tpl`)                                 |
+| `output`          | String  |                                    | Save results to a file                                                                          |
+| `exit-code`       | String  | `0`                                | Exit code when specified vulnerabilities are found                                              |
+| `ignore-unfixed`  | Boolean | false                              | Ignore unpatched/unfixed vulnerabilities                                                        |
+| `vuln-type`       | String  | `os,library`                       | Vulnerability types (os,library)                                                                |
+| `severity`        | String  | `UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL` | Severities of vulnerabilities to scanned for and displayed                                      |
+| `skip-dirs`       | String  |                                    | Comma separated list of directories where traversal is skipped                                  |
+| `skip-files`      | String  |                                    | Comma separated list of files where traversal is skipped                                        |
+| `cache-dir`       | String  |                                    | Cache directory                                                                                 |
+| `timeout`         | String  | `5m0s`                             | Scan timeout duration                                                                           |
+| `ignore-policy`   | String  |                                    | Filter vulnerabilities with OPA rego language                                                   |
+| `hide-progress`   | String  | `true`                             | Suppress progress bar                                                                           |
+| `list-all-pkgs`   | String  |                                    | Output all packages regardless of vulnerability                                                 |
+| `security-checks` | String  | `vuln,secret`                      | comma-separated list of what security issues to detect (`vuln`,`secret`,`config`)               |
+| `trivyignores`    | String  |                                    | comma-separated list of relative paths in repository to one or more `.trivyignore` files        |
+| `github-pat`      | String  |                                    | GitHub Personal Access Token (PAT) for sending SBOM scan results to GitHub Dependency Snapshots |
 
 [release]: https://github.com/aquasecurity/trivy-action/releases/latest
 [release-img]: https://img.shields.io/github/release/aquasecurity/trivy-action.svg?logo=github
